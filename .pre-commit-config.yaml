@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff-check
+        entry: rye check
+        language: system
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff-format
+        entry: rye format
+        language: system
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: rye run type
+        language: system
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: rye run test
+        language: system
+        pass_filenames: false

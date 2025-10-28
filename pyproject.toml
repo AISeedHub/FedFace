@@ -7,6 +7,10 @@ authors = [
 ]
 dependencies = [
     "pydantic-settings>=2.10.1",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "flwr>=1.5.0", # Flower framework
+    "numpy>=1.24.0",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
@@ -59,10 +63,10 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 pythonpath = "src"
 addopts = ["--import-mode=importlib"]
-log_cli=true
-log_cli_level="DEBUG"
-log_cli_date_format="%Y-%m-%dT%H:%M:%S%z"
-log_cli_format="%(levelname)-8s %(asctime)s %(name)s:%(funcName)s:L%(lineno)d %(message)s"
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_date_format = "%Y-%m-%dT%H:%M:%S%z"
+log_cli_format = "%(levelname)-8s %(asctime)s %(name)s:%(funcName)s:L%(lineno)d %(message)s"
 
 [tool.rye.scripts]
 "prod" = { cmd = "python src/main.py" }

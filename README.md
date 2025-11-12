@@ -5,22 +5,18 @@
 
 ```aiignore
 ├── fed_core/                  # 1. Lõi Federated Learning
-│   ├── client.py              # Logic chung cho client (training, update model)
-│   ├── server.py              # Logic chung cho server (aggregate, distribute model)
+│   ├── fed_client.py              # Logic chung cho client (training, update model)
+│   ├── fed_server.py              # Logic chung cho server (aggregate, distribute model)
 │   ├── strategy/              # Các chiến lược tổng hợp (FedAvg, FedProx,...)
 │   │   ├── __init__.py
 │   │   ├── fed_avg.py
 │   │   └── base_strategy.py
-│   └── communication/         # Giao thức giao tiếp client-server
-│       └── grpc_comm.py       # (hoặc các phương thức khác)
 │
 ├── use_cases/                 # 2. Các bài toán ứng dụng cụ thể
 │   └── face_detection/        # Bài toán Face Detection (trước đây là FedFace)
 │       │
 │       ├── configs/           # 3. Thư mục Configs - Rất quan trọng!
-│       │   ├── base_config.yaml
-│       │   ├── retinaface_pascal_voc.yaml  # Config cho model RetinaFace
-│       │   └── ssd_widerface.yaml          # Config cho model SSD
+│       │   └── base.yaml
 │       │
 │       ├── models/            # 4. Kiến trúc "Pluggable" AI Models
 │       │   ├── __init__.py    # Chứa "model factory" để chọn model
@@ -32,10 +28,20 @@
 │       │       ├── __init__.py
 │       │       └── architecture.py
 │       │
-│       ├── data/              # Xử lý data cho face detection
-│       │   ├── widerface_loader.py
-│       │   ├── pascal_voc_loader.py
-        │   └── distribute_data.py            # Script để tạo và chia dữ liệu
+│       ├── data/              # Xử lý data nếu cần thiết: loading, augmentation,...
+│       │   └── ...
+│       │
+│       ├── utils/
+│       │   ├── distribute_data.py # Data distribution utility
+│       │   └── prepare_dataset.py # Dataset preparation
+│       │
+│       ├── distributed_data/      # Client data storage
+│       │   ├── client_0/
+│       │   │   ├── images.pt
+│       │   │   └── labels.pt
+│       │   └── client_1/
+│       │       ├── images.pt
+│       │       └── labels.pt
 │       │
 │       ├── main_server.py     # 5. Entry point để chạy Server
 │       └── main_client.py     # 6. Entry point để chạy Client

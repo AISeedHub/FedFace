@@ -12,6 +12,7 @@ dependencies = [
     "flwr>=1.5.0", # Flower framework
     "numpy>=1.24.0",
     "tqdm>=4.67.1",
+    "matplotlib>=3.10.7",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"

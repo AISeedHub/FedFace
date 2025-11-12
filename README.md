@@ -1,178 +1,193 @@
-# Federated Learning for Face Detection using PyTorch and Flower
+# Federated Learning for Face Classification using PyTorch and Flower
 
 ## Overview 
+### Chasing `Pluggable Models` + `Config-Driven Design` + `Modular Architecture` 
+
 ```aiignore
-┌─────────────────────────────────────────────────────────────┐
-│                     Multi-Repo Setup                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  fedflower-core (PyPI Package)                               │
-│  └─→ Provides: Server, Client, Strategies                   │
-│       │                                                       │
-│       │ pip install fedflower-core                           │
-│       │                                                       │
-│       ▼                                                       │
-│  fed-face-detection                                    │
-│  └─→ Uses: fedflower-core                                    │
-│  └─→ Provides: Face models, training scripts                │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+├── fed_core/                  # 1. Lõi Federated Learning
+│   ├── client.py              # Logic chung cho client (training, update model)
+│   ├── server.py              # Logic chung cho server (aggregate, distribute model)
+│   ├── strategy/              # Các chiến lược tổng hợp (FedAvg, FedProx,...)
+│   │   ├── __init__.py
+│   │   ├── fed_avg.py
+│   │   └── base_strategy.py
+│   └── communication/         # Giao thức giao tiếp client-server
+│       └── grpc_comm.py       # (hoặc các phương thức khác)
+│
+├── use_cases/                 # 2. Các bài toán ứng dụng cụ thể
+│   └── face_detection/        # Bài toán Face Detection (trước đây là FedFace)
+│       │
+│       ├── configs/           # 3. Thư mục Configs - Rất quan trọng!
+│       │   ├── base_config.yaml
+│       │   ├── retinaface_pascal_voc.yaml  # Config cho model RetinaFace
+│       │   └── ssd_widerface.yaml          # Config cho model SSD
+│       │
+│       ├── models/            # 4. Kiến trúc "Pluggable" AI Models
+│       │   ├── __init__.py    # Chứa "model factory" để chọn model
+│       │   ├── base_model.py  # Interface (lớp cơ sở) cho mọi model
+│       │   ├── ssd/
+│       │   │   ├── __init__.py
+│       │   │   └── architecture.py
+│       │   └── retinaface/
+│       │       ├── __init__.py
+│       │       └── architecture.py
+│       │
+│       ├── data/              # Xử lý data cho face detection
+│       │   ├── widerface_loader.py
+│       │   ├── pascal_voc_loader.py
+        │   └── distribute_data.py            # Script để tạo và chia dữ liệu
+│       │
+│       ├── main_server.py     # 5. Entry point để chạy Server
+│       └── main_client.py     # 6. Entry point để chạy Client
+│
+├── requirements.txt           # Thư viện chung
+└── README.md
 
 ```
 
-### 1. Dependency Chain:
+This implementation provides a complete federated learning system for face classification using the Flower framework with 1 server and 2 clients.
 
-```aiignore
-fedflower-face-detection
-    ├── requirements.txt
-    │   └── fedflower-core>=1.0.0  ← Install from https://github.com/AISeedHub/FedFlower
-    │
-    └── src/federated/face_client.py
-        └── from fedflower.client import FedFlowerClient  ← Import from core
-```
-### 2. Interface Contract:
-`fedflower-core` defines abstract base class FedFlowerClient
-`fedflower-face-detection` implements task-specific methods
-Server uses strategy pattern from core
+## Overview
+
+- **Server**: Coordinates federated learning across multiple clients using FedAvg strategy
+- **Clients**: Train a SimpleCNN model locally on distributed face classification data
+- **Model**: SimpleCNN with 10 classes for face classification
+- **Data**: Synthetic face-like data distributed in Non-IID fashion (80-20 split)
 
 ## Architecture
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Organization                       │
-│                      AISeedHub/                              │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌──────────────────┐    ┌─────────────────────────────┐   │
-│  │ fedflower-core   │◄───│ fedflower-face-detection    │   │
-│  │  (Framework)     │    │   (Face Detection App)      │   │
-│  │                  │    │                              │   │
-│  │  • Server        │    │  • MobileNetV3-SSD          │   │
-│  │  • Client Base   │    │  • WIDER FACE Dataset       │   │
-│  │  • Strategies    │    │  • Mobile optimization      │   │
-│  └──────────────────┘    └─────────────────────────────┘   │
-│         ▲                            │                       │
-│         │                            │                       │
-│         │         pip install        │                       │
-│         └────────────────────────────┘                       │
-└─────────────────────────────────────────────────────────────┘
 
-                         Deploy to:
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-   [PC Server]          [PC Desktop]        [Smartphone 5]
-  Run FL Server        Run FL Client         Run FL Client
-  
+```
+┌─────────────────┐
+│   Fed Server    │ ← Coordinates training, aggregates models
+│   (Port 9000)   │
+└─────────────────┘
+         │
+    ┌────┴────┐
+    │         │
+┌───▼───┐ ┌───▼───┐
+│Client0│ │Client1│ ← Train locally on distributed data
+│(800)  │ │(200)  │
+└───────┘ └───────┘
 ```
 
-## Workflow
-```aiignore
-Round 1:
-┌─────────────┐
-│   Server    │  1. Broadcast initial model
-│  (PC/Cloud) │────────────────────────┐
-└─────────────┘                        │
-                                       ▼
-                        ┌──────────────────────────┐
-                        │   Client 0 (Phone 1)     │
-                        │   • Load local data      │
-                        │   • Train 2 epochs       │
-                        │   • Compute gradients    │
-                        └──────────────────────────┘
-                                       │
-                                       │ 2. Send updates
-                                       ▼
-┌─────────────┐                ┌──────────┐
-│   Server    │ 3. Aggregate   │ Updates  │
-│  FedAvg     │◄───────────────┤ from all │
-│             │    (FedAvg)    │ clients  │
-└─────────────┘                └──────────┘
-       │
-       │ 4. Broadcast updated model
-       ▼
-  (Next Round...)
-```
+## Setup and Usage
 
-## Run End-to-End Demo 🎬
+### 1. Prepare Data
 
-Terminal 1: Start Server (PC)
+First, generate and distribute synthetic data for 2 clients:
+
 ```bash
-cd fedflower-face-detection
-
-python train.py \
-  --mode server \
-  --config configs/mobile_5clients.yaml
-  
-  ```
-Expected Output:
+cd src/use_cases/face_detection/utils
+python distribute_data.py --num-clients 2 --num-images 1000 --non-iid
 ```
-🖥️  Starting Face Detection FL Server
+
+This creates:
+- Client 0: 800 images (80%)
+- Client 1: 200 images (20%)
+- Non-IID distribution for realistic federated learning scenario
+
+### 2. Start the Server
+
+In one terminal:
+
+```bash
+python src/use_cases/face_detection/main_server.py
+```
+
+Expected output:
+```
+🌸 FedFlower - Face Classification Server
+==================================================
+🚀 Starting server with 2 clients
+📊 Training rounds: 5
+🎯 Model: simple_cnn (10 classes)
+==================================================
 🌸 Starting FedFlower Server on 0.0.0.0:9000
-📊 Rounds: 20 | Min Clients: 3
-
-INFO flwr 2025-10-27 09:16:45 | app.py:163 | Starting Flower server, config: num_rounds=20, no SSL
-INFO flwr 2025-10-27 09:16:45 | server.py:89 | Flower ECE: gRPC server running (20 rounds), SSL is disabled
-INFO flwr 2025-10-27 09:16:45 | server.py:89 | [INIT]
-INFO flwr 2025-10-27 09:16:45 | server.py:89 | Requesting initial parameters from one random client
+📊 Rounds: 5 | Min Clients: 2
 ```
 
-Terminal 2-6: Start 5 Clients (Smartphones or PCs)
-Client 0:
+### 3. Start Client 0
+
+In a second terminal:
 
 ```bash
-# On PC
-cd fedface/src
+python src/use_cases/face_detection/main_client.py --client-id 0
+```
 
-python train.py \
-  --mode client \
-  --client-id 0 \
-  --config configs/mobile_5clients.yaml \
-  --server-address 192.168.1.100:9000
-  
-  ```
+### 4. Start Client 1
 
-Client 1:
+In a third terminal:
 
 ```bash
-python train.py --mode client --client-id 1 --server-address 192.168.1.100:9000
-... (repeat for clients 2, 3, 4)
+python src/use_cases/face_detection/main_client.py --client-id 1
 ```
 
-Expected Client Output:
+Expected client output:
 ```
-Code
-📱 Starting Face Detection Client 0
-📱 Client 0 initialized
-   Model size: 8.42 MB
-   Dataset size: 2000 images
-
-INFO flwr 2025-10-27 09:17:01 | grpc.py:52 | Opened insecure gRPC connection (no certificates were passed)
-INFO flwr 2025-10-27 09:17:02 | connection.py:42 | ChannelConnectivity.READY
-
-[Client 0] Starting training round...
-   Epoch 1/2: loss=0.6234, acc=0.7123
-   Epoch 2/2: loss=0.5456, acc=0.7589
-
-[Client 0] Evaluating...
-   Validation: loss=0.5123, acc=0.7834
-   
-   ```
-
-Server Output During Training:
+🌸 FedFlower - Face Classification Client 0
+==================================================
+[Client 0] Initialized with 640 training samples
+🚀 Connecting to server at 127.0.0.1:9000
+==================================================
 ```
-INFO flwr 2025-10-27 09:17:05 | server.py:89 | FL starting
-DEBUG flwr 2025-10-27 09:17:05 | server.py:222 | fit_round 1: strategy sampled 5 clients (out of 5)
 
-INFO flwr 2025-10-27 09:18:23 | server.py:125 | fit_round 1 received 5 results and 0 failures
-DEBUG flwr 2025-10-27 09:18:23 | server.py:173 | evaluate_round 1: strategy sampled 5 clients
+## Configuration
 
-INFO flwr 2025-10-27 09:18:45 | server.py:148 | evaluate_round 1 received 5 results and 0 failures
-INFO flwr 2025-10-27 09:18:45 | server.py:222 | 
-	[ROUND 1]
-	loss: 0.5421
-	accuracy: 0.7456
-	distributed_fit_time: 78.2s
-	distributed_evaluate_time: 22.1s
+Edit `src/use_cases/face_detection/configs/base.yaml` to customize:
 
-... (continues for 20 rounds)
+```yaml
+# Server Configuration
+server_address: "0.0.0.0:9000"
+num_rounds: 5
+min_clients: 2
+
+# Training Configuration
+local_epochs: 3
+batch_size: 32
+learning_rate: 0.01
+
+# Model Configuration
+model:
+  name: "simple_cnn"
+  num_classes: 10
 ```
+
+## Testing
+
+Run the test script to verify the implementation:
+
+```bash
+python test_face_classification.py
+```
+
+## Project Structure
+
+```
+src/use_cases/face_detection/
+├── main_server.py          # Federated server entry point
+├── main_client.py          # Federated client implementation
+├── configs/
+│   └── base.yaml          # Configuration file
+├── models/
+│   ├── __init__.py        # Base model interface
+│   └── cnn.py            # SimpleCNN model
+├── utils/
+│   ├── distribute_data.py # Data distribution utility
+│   └── prepare_dataset.py # Dataset preparation
+└── distributed_data/      # Client data storage
+    ├── client_0/
+    │   ├── images.pt
+    │   └── labels.pt
+    └── client_1/
+        ├── images.pt
+        └── labels.pt
+```
+
+## Expecting Results
+
+The system successfully trains a face classification model across 2 clients:
+- **Client 0**: 800 samples → ~50% accuracy
+- **Client 1**: 200 samples → ~45% accuracy
+- **Federated Model**: Aggregated model from both clients
+
+

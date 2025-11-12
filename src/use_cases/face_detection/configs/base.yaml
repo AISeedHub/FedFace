@@ -1,0 +1,23 @@
+# Server Configuration
+server_address: "0.0.0.0:9000"
+num_rounds: 5
+min_clients: 2
+
+# Federated Learning Configuration
+strategy: "fedavg"
+fraction_fit: 1.0  # Tỷ lệ clients tham gia training
+fraction_evaluate: 1.0  # Tỷ lệ clients tham gia evaluation
+
+# Client Training Configuration
+local_epochs: 3
+batch_size: 32
+learning_rate: 0.01
+
+# Model Configuration
+model:
+  name: "simple_cnn"
+  num_classes: 10
+
+# Data Configuration
+data_path: "src/use_cases/face_detection/distributed_data"
+num_clients: 2

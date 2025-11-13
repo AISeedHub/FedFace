@@ -18,11 +18,12 @@ src/use_cases/
     │   ├── cnn.py      # CNN model definition
     |   ├── mlp.py      # MLP model definition
     │   └── resnet.py   # ResNet model definition
+    ├── data/              # Contains dataset (original) and Data processing if needed: loading, augmentation,...
+    │   └──data.npz        # Sample dataset file   
     ├── main_client.py     # Main client script
     ├── main_server.py     # Main server script
     ├── central_run.py     # Centralized training script
     ├── distributed_data/  # Directory for distributed data
-    ├── data.npz           # Sample dataset file   
     └── README.md          # This user guide
 ```
 

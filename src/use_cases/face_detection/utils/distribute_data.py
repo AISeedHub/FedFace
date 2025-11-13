@@ -1,21 +1,14 @@
 """Distribute face detection data to federated clients"""
 
-import torch
-import os
-import numpy as np
-from tqdm import tqdm
-import shutil
 import argparse
-from prepare_dataset import prepare_face_detection_data
+import os
+import shutil
+
+import numpy as np
 
 
 def distribute_data(
-    images,
-    labels,
-    num_clients=2,
-    output_path="use_cases/face_detection/distributed_data",
-    non_iid=True,
-    alpha=0.5
+    images, labels, num_clients=2, output_path="./", non_iid=True, alpha=0.5
 ):
     """
     Distribute data to clients in IID or Non-IID fashion.
@@ -49,11 +42,8 @@ def distribute_data(
         if num_clients == 2:
             # Simple 80-20 split for 2 clients
             split_point = int(0.8 * num_images)
-            client_indices = {
-                0: indices[:split_point],
-                1: indices[split_point:]
-            }
-            print(f"\n   Split ratio: 80% - 20%")
+            client_indices = {0: indices[:split_point], 1: indices[split_point:]}
+            print("\n   Split ratio: 80% - 20%")
         else:
             # Use Dirichlet distribution for more clients
             proportions = np.random.dirichlet([alpha] * num_clients)
@@ -78,12 +68,15 @@ def distribute_data(
         client_images = images[idx]
         client_labels = labels[idx]
 
-        # Save as PyTorch tensors
-        torch.save(client_images, os.path.join(client_dir, "images.pt"))
-        torch.save(client_labels, os.path.join(client_dir, "labels.pt"))
+        # Save as npz files
+        np.savez_compressed(
+            os.path.join(client_dir, "data.npz"),
+            images=client_images,
+            labels=client_labels,
+        )
 
         # Calculate label distribution
-        unique, counts = torch.unique(client_labels, return_counts=True)
+        unique, counts = np.unique(client_labels, return_counts=True)
         label_dist = dict(zip(unique.tolist(), counts.tolist()))
 
         print(f"✓ Client {client_id}:")
@@ -92,18 +85,36 @@ def distribute_data(
         print(f"   - Saved to: {client_dir}")
 
     print("-" * 80)
-    print(f"\n✅ Data distribution complete!")
+    print("\n✅ Data distribution complete!")
     print(f"📁 Data saved to: {output_path}\n")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Prepare and distribute face detection data")
+    parser = argparse.ArgumentParser(
+        description="Prepare and distribute face detection data"
+    )
     parser.add_argument("--num-clients", type=int, default=2, help="Number of clients")
-    parser.add_argument("--num-images", type=int, default=1000, help="Number of images (for synthetic data)")
-    parser.add_argument("--use-real-data", action="store_true", help="Use real CelebA data")
-    parser.add_argument("--non-iid", action="store_true", default=True, help="Use non-IID distribution")
-    parser.add_argument("--output", type=str, default="use_cases/face_detection/distributed_data",
-                        help="Output directory")
+    # parser.add_argument(
+    #     "--num-images",
+    #     type=int,
+    #     default=1000,
+    #     help="Number of images (for synthetic data)",
+    # )
+    # parser.add_argument(
+    #     "--use-real-data", action="store_true", help="Use real CelebA data"
+    # )
+    parser.add_argument(
+        "--dir", type=str, default="./lfw_100.npz", help="Path to data npz file"
+    )
+    parser.add_argument(
+        "--non-iid", action="store_true", default=True, help="Use non-IID distribution"
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="use_cases/face_detection/distributed_data",
+        help="Output directory",
+    )
     args = parser.parse_args()
 
     print("=" * 80)
@@ -112,10 +123,11 @@ def main():
 
     # Step 1: Prepare dataset
     print("\n📥 Step 1: Preparing dataset...")
-    images, labels = prepare_face_detection_data(
-        use_real_data=args.use_real_data,
-        num_synthetic_images=args.num_images
-    )
+    # images, labels = prepare_face_detection_data(
+    #     use_real_data=args.use_real_data, num_synthetic_images=args.num_images
+    # )
+    data = np.load(args.dir)
+    images, labels = data["images"], data["labels"]
 
     # Step 2: Distribute to clients
     print(f"\n📤 Step 2: Distributing to {args.num_clients} clients...")
@@ -124,7 +136,7 @@ def main():
         labels=labels,
         num_clients=args.num_clients,
         output_path=args.output,
-        non_iid=args.non_iid
+        non_iid=args.non_iid,
     )
 
     print("\n" + "=" * 80)
@@ -132,7 +144,9 @@ def main():
     print("=" * 80)
     print("\nNext steps:")
     print("  1. Start server: python use_cases/face_detection/main_server.py")
-    print("  2. Start clients: python use_cases/face_detection/main_client.py --client-id 0")
+    print(
+        "  2. Start clients: python use_cases/face_detection/main_client.py --client-id 0"
+    )
     print("=" * 80 + "\n")
 
 

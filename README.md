@@ -1,34 +1,29 @@
 # Federated Learning for Face Classification using PyTorch and Flower
 
 ## Overview 
-### Chasing `Pluggable Models` + `Config-Driven Design` + `Modular Architecture` 
+### Chasing `Pluggable Models` + `Config-Driven Design` + `Modular Architecture` concept
 
 ```aiignore
-├── fed_core/                  # 1. Lõi Federated Learning
-│   ├── fed_client.py              # Logic chung cho client (training, update model)
-│   ├── fed_server.py              # Logic chung cho server (aggregate, distribute model)
-│   ├── strategy/              # Các chiến lược tổng hợp (FedAvg, FedProx,...)
-│   │   ├── __init__.py
-│   │   ├── fed_avg.py
-│   │   └── base_strategy.py
+├── fed_core/                  # 1. Federated Learning Core
+│   ├── fed_client.py              # Common logic for client (training, update model)
+│   └── fed_server.py              # Common logic for server (aggregate, distribute model)
 │
-├── use_cases/                 # 2. Các bài toán ứng dụng cụ thể
-│   └── face_detection/        # Bài toán Face Detection (trước đây là FedFace)
+├── use_cases/                 # 2. Specific application use cases
+│   └── face_detection/       
 │       │
-│       ├── configs/           # 3. Thư mục Configs - Rất quan trọng!
+│       ├── configs/           # 3. Configs Directory - Very important!
 │       │   └── base.yaml
 │       │
-│       ├── models/            # 4. Kiến trúc "Pluggable" AI Models
-│       │   ├── __init__.py    # Chứa "model factory" để chọn model
-│       │   ├── base_model.py  # Interface (lớp cơ sở) cho mọi model
-│       │   ├── ssd/
+│       ├── models/            # 4. "Pluggable" AI Models Architecture
+│       │   ├── __init__.py    # Contains "model factory" to select model, Interface (base class) for all models
+│       │   ├── mlp/
 │       │   │   ├── __init__.py
 │       │   │   └── architecture.py
-│       │   └── retinaface/
+│       │   └── cnn/
 │       │       ├── __init__.py
 │       │       └── architecture.py
 │       │
-│       ├── data/              # Xử lý data nếu cần thiết: loading, augmentation,...
+│       ├── data/              # Contains dataset (original) and Data processing if needed: loading, augmentation,...
 │       │   └── ...
 │       │
 │       ├── utils/
@@ -37,18 +32,20 @@
 │       │
 │       ├── distributed_data/      # Client data storage
 │       │   ├── client_0/
-│       │   │   ├── images.pt
-│       │   │   └── labels.pt
-│       │   └── client_1/
-│       │       ├── images.pt
-│       │       └── labels.pt
+│       │   ├── client_1/
+│       │   └── ...
 │       │
-│       ├── main_server.py     # 5. Entry point để chạy Server
-│       └── main_client.py     # 6. Entry point để chạy Client
+│       ├── central_run.py   # Script to run centralized model (non-federated) for comparison
+│       │
+│       ├── main_server.py     # 5. Entry point to run Server
+│       ├── main_client.py     # 6. Entry point to run Client
+│       │
+│       ├── run_clients.sh    # Script to launch multiple clients
+│       └── run_server.sh     # Script to launch server
 │
-├── requirements.txt           # Thư viện chung
+├── pyproject.toml              # Project configuration
+├── uv.lock                   # Dependency lock file
 └── README.md
-
 ```
 
 This implementation provides a complete federated learning system for face classification using the Flower framework with 1 server and 2 clients.
@@ -56,7 +53,7 @@ This implementation provides a complete federated learning system for face class
 ## Overview
 
 - **Server**: Coordinates federated learning across multiple clients using FedAvg strategy
-- **Clients**: Train a SimpleCNN model locally on distributed face classification data
+- **Clients**: Train a Simple Deep learning model locally on distributed face classification data
 - **Model**: SimpleCNN with 10 classes for face classification
 - **Data**: Synthetic face-like data distributed in Non-IID fashion (80-20 split)
 
@@ -77,6 +74,33 @@ This implementation provides a complete federated learning system for face class
 ```
 
 ## Setup and Usage
+
+
+## Configuration
+
+Edit `src/use_cases/face_detection/configs/base.yaml` to customize:
+
+```yaml
+# Server Configuration
+server_address: "0.0.0.0:9000" # public server address
+num_rounds: 5
+min_clients: 2 # minimum clients to start training
+
+# Training Configuration
+local_epochs: 3
+batch_size: 32
+learning_rate: 0.01
+
+# Model Configuration
+model:
+  name: "simple_mlp"
+  num_classes: 100
+
+# Data Configuration
+data_path: "src/use_cases/face_detection/distributed_data"
+num_clients: 2 # number of clients
+```
+
 
 ### 1. Prepare Data
 
@@ -328,63 +352,12 @@ INFO :      Received: reconnect message 196409d5-e523-4b3b-9116-60ca5fafcf7b
 INFO :      Disconnect and shut down
 ```
 
-## Configuration
-
-Edit `src/use_cases/face_detection/configs/base.yaml` to customize:
-
-```yaml
-# Server Configuration
-server_address: "0.0.0.0:9000"
-num_rounds: 5
-min_clients: 2
-
-# Training Configuration
-local_epochs: 3
-batch_size: 32
-learning_rate: 0.01
-
-# Model Configuration
-model:
-  name: "simple_cnn"
-  num_classes: 10
-```
-
-## Testing
-
-Run the test script to verify the implementation:
-
-```bash
-python test_face_classification.py
-```
-
-## Project Structure
-
-```
-src/use_cases/face_detection/
-├── main_server.py          # Federated server entry point
-├── main_client.py          # Federated client implementation
-├── configs/
-│   └── base.yaml          # Configuration file
-├── models/
-│   ├── __init__.py        # Base model interface
-│   └── cnn.py            # SimpleCNN model
-├── utils/
-│   ├── distribute_data.py # Data distribution utility
-│   └── prepare_dataset.py # Dataset preparation
-└── distributed_data/      # Client data storage
-    ├── client_0/
-    │   ├── images.pt
-    │   └── labels.pt
-    └── client_1/
-        ├── images.pt
-        └── labels.pt
-```
 
 ## Expecting Results
 
 The system successfully trains a face classification model across 2 clients:
-- **Client 0**: 800 samples → ~50% accuracy
-- **Client 1**: 200 samples → ~45% accuracy
+- **Client 0**: 800 samples → ~99% accuracy
+- **Client 1**: 200 samples → ~99% accuracy
 - **Federated Model**: Aggregated model from both clients
 
 

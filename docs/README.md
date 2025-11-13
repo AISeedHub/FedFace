@@ -5,7 +5,7 @@ This `FedFace` project leverages **Federated Learning** for *face classification
 
 ## Visual Overview
 
-![image](../assets/visual_overview.png)
+![image](./visual_overview.png)
 
 ## Chapters
 

@@ -78,7 +78,6 @@ class LFW100EmbDataset(Dataset):
         unique_labels = sorted(set(data["labels"]))
         self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
 
-        # self.samples = self._load_annotations()
 
     def _default_transform(self):
         return transforms.Compose(

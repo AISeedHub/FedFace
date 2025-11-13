@@ -19,10 +19,10 @@ model:
   num_classes: 100
 
 # Data Configuration
-data_type: "npz" # "folder" or "npz"
-dataset_url: "https://github.com/AISeedHub/FedFace/releases/download/data/lfw_100.npz"
-full_data_path: "use_cases/face_detection/data/lfw_100.npz"
-distributed_data_path: "use_cases/face_detection/distributed_data" # Path to save distributed data among clients
+data_type: "folder" # "folder" type for Resnet or "npz" for  MLP, Mr.Vu logic
+dataset_url: "https://github.com/AISeedHub/FedFace/releases/download/data/dataset.zip"
+full_data_path: "src/use_cases/face_detection/data/dataset"
+distributed_data_path: "src/use_cases/face_detection/distributed_data" # Path to save distributed data among clients
 num_clients: 2
 non_iid: true
 alpha: 0.5  # Dirichlet distribution parameter for non-IID data splitting

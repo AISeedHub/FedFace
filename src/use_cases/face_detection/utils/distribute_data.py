@@ -139,7 +139,7 @@ def distribute_data(
 
 def main():
     # load configurations in yaml
-    with open("use_cases/face_detection/configs/base.yaml", encoding="utf-8") as f:
+    with open("src/use_cases/face_detection/configs/base.yaml", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     print("=" * 80)
@@ -151,11 +151,18 @@ def main():
     if not os.path.exists(config["full_data_path"]):
         print(f"❌ Dataset not found at {config['full_data_path']}. Starting to download dataset ...")
         try:
-            folder_path = os.path.dirname(config["full_data_path"])
-            os.makedirs(folder_path, exist_ok=True)
-            wget.download(config["dataset_url"], config["full_data_path"])
-            print(f"\n✅ Dataset downloaded successfully to {config['full_data_path']}.")
-            config["data_type"] = "npz"  # assuming downloaded dataset is in npz format
+            if config["data_type"] == "folder":
+                folder_path = config["full_data_path"]
+                os.makedirs(folder_path, exist_ok=True)
+                # use wget to download zip file and unzip it
+                zip_url = config["dataset_url"]
+                zip_path = os.path.join(folder_path, "dataset.zip")
+                wget.download(zip_url, zip_path)
+                shutil.unpack_archive(zip_path, folder_path)
+                os.remove(zip_path)
+                print(f"✅ Dataset downloaded and extracted to {folder_path}")
+            else:
+                raise ValueError(f"Unsupported data type: {config['data_type']}")
         except Exception as e:
             print(f"\n❌ Failed to download dataset: {e}")
             return
@@ -185,9 +192,9 @@ def main():
     print("✅ All done! You can now start the federated learning process.")
     print("=" * 80)
     print("\nNext steps:")
-    print("  1. Start server: python use_cases/face_detection/main_server.py")
+    print("  1. Start server: python src/use_cases/face_detection/main_server.py")
     print(
-        "  2. Start clients: python use_cases/face_detection/main_client.py --client-id 0"
+        "  2. Start clients: python src/use_cases/face_detection/main_client.py --client-id 0"
     )
     print("=" * 80 + "\n")
 

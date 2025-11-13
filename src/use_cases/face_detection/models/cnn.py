@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from src.use_cases.face_detection.models import FaceDetectorBase
 
 
@@ -16,7 +17,7 @@ class SimpleCNN(FaceDetectorBase):
     """
 
     def __init__(self, num_classes=10):
-        super(SimpleCNN, self).__init__()
+        super().__init__()
 
         # Convolutional layers
         self.conv1 = nn.Conv2d(3, 6, 5)

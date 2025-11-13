@@ -4,6 +4,7 @@
 ### Chasing `Pluggable Models` + `Config-Driven Design` + `Modular Architecture` concept
 
 ```aiignore
+src/
 ├── fed_core/                  # 1. Federated Learning Core
 │   ├── fed_client.py              # Common logic for client (training, update model)
 │   └── fed_server.py              # Common logic for server (aggregate, distribute model)
@@ -24,6 +25,7 @@
 │       │       └── architecture.py
 │       │
 │       ├── data/              # Contains dataset (original) and Data processing if needed: loading, augmentation,...
+│       │   ├──data.npz        # Sample dataset file   
 │       │   └── ...
 │       │
 │       ├── utils/
@@ -38,24 +40,18 @@
 │       ├── central_run.py   # Script to run centralized model (non-federated) for comparison
 │       │
 │       ├── main_server.py     # 5. Entry point to run Server
-│       ├── main_client.py     # 6. Entry point to run Client
-│       │
-│       ├── run_clients.sh    # Script to launch multiple clients
-│       └── run_server.sh     # Script to launch server
+│       └── main_client.py     # 6. Entry point to run Client
+│    
+├── run_clients.sh    # Script to launch multiple clients
+├── run_server.sh     # Script to launch server
+├── run_central.sh    # Script to launch centralized training
 │
-├── pyproject.toml              # Project configuration
+├── pyproject.toml            # Project configuration
 ├── uv.lock                   # Dependency lock file
 └── README.md
 ```
 
 This implementation provides a complete federated learning system for face classification using the Flower framework with 1 server and 2 clients.
-
-## Overview
-
-- **Server**: Coordinates federated learning across multiple clients using FedAvg strategy
-- **Clients**: Train a Simple Deep learning model locally on distributed face classification data
-- **Model**: SimpleCNN with 10 classes for face classification
-- **Data**: Synthetic face-like data distributed in Non-IID fashion (80-20 split)
 
 ## Architecture
 
@@ -76,7 +72,7 @@ This implementation provides a complete federated learning system for face class
 ## Setup and Usage
 
 
-## Configuration
+### 0.Configuration
 
 Edit `src/use_cases/face_detection/configs/base.yaml` to customize:
 
@@ -93,7 +89,7 @@ learning_rate: 0.01
 
 # Model Configuration
 model:
-  name: "simple_mlp"
+  name: "resnet"
   num_classes: 100
 
 # Data Configuration
@@ -107,8 +103,8 @@ num_clients: 2 # number of clients
 First, generate and distribute synthetic data for 2 clients:
 
 ```bash
-cd src/use_cases/face_detection/utils
-python distribute_data.py --num-clients 2 --num-images 1000 --non-iid
+cd src/use_cases/face_detection/
+uv run python utils/distribute_data.py 
 ```
 
 Expected output:

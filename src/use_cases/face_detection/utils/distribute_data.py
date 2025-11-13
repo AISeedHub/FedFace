@@ -2,6 +2,8 @@
 
 import os
 import shutil
+import yaml
+import wget
 
 import numpy as np
 
@@ -24,7 +26,6 @@ def save_npz_data(images, labels, save_path):
 
 
 def load_folder_data(folder_path):
-
     images = []
     labels = []
     for identity_folder in os.listdir(folder_path):
@@ -48,13 +49,13 @@ def save_folder_data(images, labels, save_path):
 
 
 def distribute_data(
-    images,
-    labels,
-    num_clients=2,
-    output_path="./",
-    data_type="npz",
-    non_iid=True,
-    alpha=0.5,
+        images,
+        labels,
+        num_clients=2,
+        output_path="./",
+        data_type="npz",
+        non_iid=True,
+        alpha=0.5,
 ):
     """
     Distribute data to clients in IID or Non-IID fashion.
@@ -127,7 +128,7 @@ def distribute_data(
         label_dist = dict(zip(unique.tolist(), counts.tolist()))
 
         print(f"✓ Client {client_id}:")
-        print(f"   - Images: {len(idx):4d} ({len(idx)/num_images*100:.1f}%)")
+        print(f"   - Images: {len(idx):4d} ({len(idx) / num_images * 100:.1f}%)")
         print(f"   - Label distribution: {label_dist}")
         print(f"   - Saved to: {client_dir}")
 
@@ -138,9 +139,7 @@ def distribute_data(
 
 def main():
     # load configurations in yaml
-    import yaml
-
-    with open("src/use_cases/face_detection/configs/base.yaml", encoding="utf-8") as f:
+    with open("use_cases/face_detection/configs/base.yaml", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     print("=" * 80)
@@ -149,6 +148,17 @@ def main():
 
     # Step 1: Prepare dataset
     print("\n📥 Step 1: Preparing dataset...")
+    if not os.path.exists(config["full_data_path"]):
+        print(f"❌ Dataset not found at {config['full_data_path']}. Starting to download dataset ...")
+        try:
+            folder_path = os.path.dirname(config["full_data_path"])
+            os.makedirs(folder_path, exist_ok=True)
+            wget.download(config["dataset_url"], config["full_data_path"])
+            print(f"\n✅ Dataset downloaded successfully to {config['full_data_path']}.")
+            config["data_type"] = "npz"  # assuming downloaded dataset is in npz format
+        except Exception as e:
+            print(f"\n❌ Failed to download dataset: {e}")
+            return
 
     if config["data_type"] == "npz":
         images, labels = load_npz_data(config["full_data_path"])

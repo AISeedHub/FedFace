@@ -1,5 +1,5 @@
 # Server Configuration
-server_address: "0.0.0.0:9000"
+server_address: "127.0.0.1:9000"
 num_rounds: 5
 min_clients: 2
 
@@ -15,10 +15,14 @@ learning_rate: 0.01
 
 # Model Configuration
 model:
-  name: "simple_mlp"
+  name: "resnet"
   num_classes: 100
 
 # Data Configuration
-# data_path: "src/use_cases/face_detection/distributed_data"
-data_path: "./use_cases/face_detection/distributed_data"
+data_type: "folder" # "folder" type for Resnet or "npz" for  MLP, Mr.Vu logic
+dataset_url: "https://github.com/AISeedHub/FedFace/releases/download/data/dataset.zip"
+full_data_path: "src/use_cases/face_detection/data/dataset"
+distributed_data_path: "src/use_cases/face_detection/distributed_data" # Path to save distributed data among clients
 num_clients: 2
+non_iid: true
+alpha: 0.5  # Dirichlet distribution parameter for non-IID data splitting

@@ -4,6 +4,7 @@ import os
 
 import cv2
 import numpy as np
+import PIL
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -65,9 +66,7 @@ def make_embedding_from_folder(data_dir: str, save_path: str = None):
 
 class LFW100EmbDataset(Dataset):
     """LFW 100 FACE Dataset for Face Recognition
-    - Load iamges from folder tree structure
-    - Each subfolder corresponds to one identity
-    - Use InsightFace to get face embeddings, so the returned is (embedding, label)
+    - Load embeddings from npz file
     """
 
     def __init__(self, data_dir: str, split: str = "train", transform=None) -> None:
@@ -83,7 +82,6 @@ class LFW100EmbDataset(Dataset):
         # encode labels to integers
         unique_labels = sorted(set(data["labels"]))
         self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
-
 
     def _default_transform(self):
         return transforms.Compose(
@@ -105,14 +103,63 @@ class LFW100EmbDataset(Dataset):
         return embedding, self.label_to_idx[label]
 
 
+class LFW100Dataset(Dataset):
+    """LFW 100 FACE Dataset for Face Recognition
+    - Load iamges from folder tree structure
+    - Each subfolder corresponds to one identity
+    """
+
+    def __init__(self, data_dir: str, split: str = "train", transform=None) -> None:
+        self.data_dir = data_dir
+        self.split = split
+        self.transform = transform or self._default_transform()
+
+        # Read image and labels from npz
+        self.samples = []
+        for identity_folder in os.listdir(data_dir):
+            identity_path = os.path.join(data_dir, identity_folder)
+            if not os.path.isdir(identity_path):
+                continue
+            for img_name in os.listdir(identity_path):
+                img_path = os.path.join(identity_path, img_name)
+                image = PIL.Image.open(img_path).convert("RGB")
+                if image is None:
+                    continue
+                self.samples.append((image, identity_folder))
+
+        unique_labels = sorted({s[1] for s in self.samples})
+        self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
+
+    def _default_transform(self):
+        return transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+
+        image, label = self.samples[idx]
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, self.label_to_idx[label]
+
+
 if __name__ == "__main__":
     # Test the dataset loader
     # data_dir = "E:/dataset/lfw/lfw_100_aug"
     # make_embedding_from_folder(data_dir, save_path="lfw_10.npz")
-    dataset = LFW100EmbDataset(
-        data_dir="use_cases/face_detection/distributed_data/client_0/", split="train"
-    )
+    dataset = LFW100Dataset(data_dir="E:/dataset/lfw/lfw_100_aug", split="train")
     print(f"Dataset size: {len(dataset)}")
     for i in range(5):
-        emb, label = dataset[i]
-        print(f"Sample {i}: Embedding shape: {emb.shape}, Label: {label}")
+        image, label = dataset[i]
+        print(f"Sample {i}: Image shape: {image.shape}, Label: {label}")

@@ -1,23 +1,70 @@
 """Distribute face detection data to federated clients"""
 
-import argparse
 import os
 import shutil
 
 import numpy as np
 
 
+def load_npz_data(npz_path):
+    """Load images and labels from npz file"""
+    data = np.load(npz_path)
+    images = data["images"]
+    labels = data["labels"]
+    return images, labels
+
+
+def save_npz_data(images, labels, save_path):
+    """Save images and labels to npz file"""
+    np.savez_compressed(
+        os.path.join(save_path, "data.npz"),
+        images=images,
+        labels=labels,
+    )
+
+
+def load_folder_data(folder_path):
+
+    images = []
+    labels = []
+    for identity_folder in os.listdir(folder_path):
+        identity_path = os.path.join(folder_path, identity_folder)
+        if not os.path.isdir(identity_path):
+            continue
+        for img_name in os.listdir(identity_path):
+            img_path = os.path.join(identity_path, img_name)
+            images.append(img_path)
+            labels.append(identity_folder)
+    return np.array(images), np.array(labels)
+
+
+def save_folder_data(images, labels, save_path):
+    """Save images to folder structure"""
+    for img, label in zip(images, labels):
+        label_folder = os.path.join(save_path, label)
+        os.makedirs(label_folder, exist_ok=True)
+        img_name = os.path.basename(img)
+        shutil.copy(img, os.path.join(label_folder, img_name))
+
+
 def distribute_data(
-    images, labels, num_clients=2, output_path="./", non_iid=True, alpha=0.5
+    images,
+    labels,
+    num_clients=2,
+    output_path="./",
+    data_type="npz",
+    non_iid=True,
+    alpha=0.5,
 ):
     """
     Distribute data to clients in IID or Non-IID fashion.
 
     Args:
-        images: Tensor of images
-        labels: Tensor of labels
+        images: list of images
+        labels: list of labels
         num_clients: Number of clients
         output_path: Output directory
+        data_type: Type of data ("npz" or "folder")
         non_iid: If True, create non-IID distribution
         alpha: Dirichlet distribution parameter (smaller = more non-IID)
     """
@@ -68,12 +115,12 @@ def distribute_data(
         client_images = images[idx]
         client_labels = labels[idx]
 
-        # Save as npz files
-        np.savez_compressed(
-            os.path.join(client_dir, "data.npz"),
-            images=client_images,
-            labels=client_labels,
-        )
+        if data_type == "npz":
+            save_npz_data(client_images, client_labels, client_dir)
+        elif data_type == "folder":
+            save_folder_data(client_images, client_labels, client_dir)
+        else:
+            raise ValueError(f"Unsupported data type: {data_type}")
 
         # Calculate label distribution
         unique, counts = np.unique(client_labels, return_counts=True)
@@ -90,32 +137,11 @@ def distribute_data(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Prepare and distribute face detection data"
-    )
-    parser.add_argument("--num-clients", type=int, default=2, help="Number of clients")
-    # parser.add_argument(
-    #     "--num-images",
-    #     type=int,
-    #     default=1000,
-    #     help="Number of images (for synthetic data)",
-    # )
-    # parser.add_argument(
-    #     "--use-real-data", action="store_true", help="Use real CelebA data"
-    # )
-    parser.add_argument(
-        "--dir", type=str, default="./lfw_100.npz", help="Path to data npz file"
-    )
-    parser.add_argument(
-        "--non-iid", action="store_true", default=True, help="Use non-IID distribution"
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="use_cases/face_detection/distributed_data",
-        help="Output directory",
-    )
-    args = parser.parse_args()
+    # load configurations in yaml
+    import yaml
+
+    with open("src/use_cases/face_detection/configs/base.yaml", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
 
     print("=" * 80)
     print("🌸 FedFlower - Face Detection Data Preparation")
@@ -123,20 +149,26 @@ def main():
 
     # Step 1: Prepare dataset
     print("\n📥 Step 1: Preparing dataset...")
-    # images, labels = prepare_face_detection_data(
-    #     use_real_data=args.use_real_data, num_synthetic_images=args.num_images
-    # )
-    data = np.load(args.dir)
-    images, labels = data["images"], data["labels"]
+
+    if config["data_type"] == "npz":
+        images, labels = load_npz_data(config["full_data_path"])
+    elif config["data_type"] == "folder":
+        # Add folder data loading method if needed
+        images, labels = load_folder_data(config["full_data_path"])
+    else:
+        # Add other data loading methods if needed
+        raise ValueError(f"Unsupported data type: {config["data_type"]}")
 
     # Step 2: Distribute to clients
-    print(f"\n📤 Step 2: Distributing to {args.num_clients} clients...")
+    print(f"\n📤 Step 2: Distributing to {config["num_clients"]} clients...")
     distribute_data(
         images=images,
         labels=labels,
-        num_clients=args.num_clients,
-        output_path=args.output,
-        non_iid=args.non_iid,
+        num_clients=config["num_clients"],
+        output_path=config["distributed_data_path"],
+        non_iid=config["non_iid"],
+        alpha=config["alpha"],
+        data_type=config["data_type"],
     )
 
     print("\n" + "=" * 80)

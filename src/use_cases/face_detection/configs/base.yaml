@@ -1,5 +1,5 @@
 # Server Configuration
-server_address: "0.0.0.0:9000"
+server_address: "127.0.0.1:9000"
 num_rounds: 5
 min_clients: 2
 
@@ -15,10 +15,14 @@ learning_rate: 0.01
 
 # Model Configuration
 model:
-  name: "simple_mlp"
+  name: "resnet"
   num_classes: 100
 
 # Data Configuration
 # data_path: "src/use_cases/face_detection/distributed_data"
-data_path: "./use_cases/face_detection/distributed_data"
+data_type: "folder" # "folder" or "npz"
+full_data_path: "E:/dataset/lfw/lfw_100_aug"
+distributed_data_path: "src/use_cases/face_detection/distributed_data"
 num_clients: 2
+non_iid: true
+alpha: 0.5  # Dirichlet distribution parameter for non-IID data splitting

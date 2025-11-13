@@ -13,7 +13,7 @@ class MLP(FaceDetectorBase):
     """
 
     def __init__(self, num_classes=10):
-        super(MLP, self).__init__()
+        super().__init__()
 
         # Fully connected layers
         self.mlp = nn.Sequential(

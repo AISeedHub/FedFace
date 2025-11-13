@@ -16,8 +16,24 @@ from torch.utils.data import DataLoader
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from src.fed_core.fed_client import FedFlowerClient
+from src.use_cases.face_detection.models.cnn import SimpleCNN
 from src.use_cases.face_detection.models.mlp import MLP
-from src.use_cases.face_detection.utils.lfw_100_loader import LFW100EmbDataset
+from src.use_cases.face_detection.models.resnet import PretrainedResNet
+from src.use_cases.face_detection.utils.lfw_100_loader import (
+    LFW100Dataset,
+    LFW100EmbDataset,
+)
+
+MODELS = {
+    "mlp": MLP,
+    "resnet": PretrainedResNet,
+    "cnn": SimpleCNN,
+}
+
+LOADER = {
+    "folder": LFW100Dataset,
+    "npz": LFW100EmbDataset,
+}
 
 
 class FaceClassificationClient(FedFlowerClient):
@@ -27,7 +43,9 @@ class FaceClassificationClient(FedFlowerClient):
         super().__init__(client_id, config)
 
         # Initialize model
-        self.model = MLP(num_classes=config["model"]["num_classes"])
+        self.model = MODELS[config["model"]["name"]](
+            num_classes=config["model"]["num_classes"]
+        )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
@@ -40,15 +58,13 @@ class FaceClassificationClient(FedFlowerClient):
         # Load client data
         self.train_loader, self.test_loader = self._load_data()
 
-        print(
-            f"[Client {client_id}] Initialized with {len(self.train_loader.dataset)} training samples"
-        )
-
     def _load_data(self):
         """Load client-specific data"""
-        data_path = os.path.join(self.config["data_path"], f"client_{self.client_id}")
+        data_path = os.path.join(
+            self.config["distributed_data_path"], f"client_{self.client_id}"
+        )
 
-        dataset = LFW100EmbDataset(data_dir=data_path, split="train")
+        dataset = LOADER[self.config["data_type"]](data_dir=data_path, split="train")
         train_dataset, test_dataset = torch.utils.data.random_split(
             dataset, [int(0.8 * len(dataset)), len(dataset) - int(0.8 * len(dataset))]
         )
@@ -69,6 +85,9 @@ class FaceClassificationClient(FedFlowerClient):
         correct = 0
         total = 0
 
+        print(
+            f"[Client {self.client_id}] Initialized with {len(self.train_loader.dataset)} training samples"
+        )
         for epoch in range(epochs):
             epoch_loss = 0.0
             for batch_idx, (data, target) in enumerate(self.train_loader):
@@ -106,6 +125,9 @@ class FaceClassificationClient(FedFlowerClient):
         correct = 0
         total = 0
 
+        print(
+            f"[Client {self.client_id}] Initialized with {len(self.test_loader.dataset)} testing samples"
+        )
         with torch.no_grad():
             for data, target in self.test_loader:
                 data, target = data.to(self.device), target.to(self.device)

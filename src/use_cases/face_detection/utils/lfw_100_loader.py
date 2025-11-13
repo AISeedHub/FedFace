@@ -91,12 +91,12 @@ class LFW100EmbDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        embbeding, label = self.samples[idx]
+        embedding, label = self.samples[idx]
 
         if self.transform:
-            embbeding = self.transform(embbeding)
+            embedding = self.transform(embedding)
 
-        return embbeding, self.label_to_idx[label]
+        return embedding, self.label_to_idx[label]
 
 
 if __name__ == "__main__":

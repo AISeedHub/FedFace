@@ -15,9 +15,10 @@ learning_rate: 0.01
 
 # Model Configuration
 model:
-  name: "simple_cnn"
-  num_classes: 10
+  name: "simple_mlp"
+  num_classes: 100
 
 # Data Configuration
-data_path: "src/use_cases/face_detection/distributed_data"
+# data_path: "src/use_cases/face_detection/distributed_data"
+data_path: "./use_cases/face_detection/distributed_data"
 num_clients: 2

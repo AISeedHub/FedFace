@@ -1,9 +1,9 @@
 [project]
-name = "aiseed_python_template"
+name = "fedface"
 version = "0.1.0"
-description = "Add your description here"
+description = "Federated Learning for Face Recognition"
 authors = [
-    { name = "Jinho Jang", email = "verycosy@kakao.com" }
+    { name = "aiseed", email = "aiseed@aiseed.kr" }
 ]
 dependencies = [
     "pydantic-settings>=2.10.1",
@@ -69,6 +69,11 @@ log_cli = true
 log_cli_level = "DEBUG"
 log_cli_date_format = "%Y-%m-%dT%H:%M:%S%z"
 log_cli_format = "%(levelname)-8s %(asctime)s %(name)s:%(funcName)s:L%(lineno)d %(message)s"
+
+[dependency-groups]
+dev = [
+    "pandas>=2.3.3",
+]
 
 [tool.rye.scripts]
 "prod" = { cmd = "python src/main.py" }

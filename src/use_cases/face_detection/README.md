@@ -90,3 +90,10 @@ python src/use_cases/face_detection/main_server.py
 ```bash
 python src/use_cases/face_detection/main_client.py --client-id [id]
 ```
+
+4. Centralized Training (Optional):
+   If you want to run centralized training, use the `central_run.py` script.
+
+```bash
+python src/use_cases/face_detection/central_run.py
+```

@@ -11,8 +11,14 @@ from torchvision import transforms
 
 def get_face_embedding(app, image: np.ndarray) -> np.ndarray:
     """
-    Dummy function to get face embedding from image using InsightFace.
-    In real implementation, this would use InsightFace model to extract embeddings.
+    Extracts a face embedding from an image using the InsightFace model.
+
+    Args:
+        app: An initialized InsightFace FaceAnalysis application.
+        image (np.ndarray): The input image from which to extract the face embedding.
+
+    Returns:
+        np.ndarray: The extracted face embedding.
     """
     # For testing, return a random embedding
     embedding = app.get(image)[0]["embedding"]

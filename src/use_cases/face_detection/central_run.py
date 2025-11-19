@@ -53,7 +53,7 @@ class FaceClassification:
 
     def _load_data(self):
         """Load client-specific data"""
-        data_path = os.path.join(self.config["full_data_path"])
+        data_path = os.path.join(self.config["train_data_path"])
 
         dataset = LOADER[self.config["data_type"]](data_dir=data_path, split="train")
         train_dataset, test_dataset = torch.utils.data.random_split(
@@ -150,6 +150,9 @@ def main():
     central_run = FaceClassification(config)
     central_run.train_model(epochs=config["local_epochs"])
     central_run.evaluate_model()
+
+    print("Save model to local directory")
+    torch.save(central_run.model.state_dict(), "centralize_model.pth")
 
     print("=" * 50)
 

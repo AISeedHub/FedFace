@@ -171,7 +171,7 @@ def main():
         images, labels = load_npz_data(config["full_data_path"])
     elif config["data_type"] == "folder":
         # Add folder data loading method if needed
-        images, labels = load_folder_data(config["full_data_path"])
+        images, labels = load_folder_data(config["train_data_path"])
     else:
         # Add other data loading methods if needed
         raise ValueError(f"Unsupported data type: {config["data_type"]}")

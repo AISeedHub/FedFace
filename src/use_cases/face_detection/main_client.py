@@ -116,6 +116,9 @@ class FaceClassificationClient(FedFlowerClient):
             f"[Client {self.client_id}] Training completed - Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%"
         )
 
+        print("Save model to local directory")
+        torch.save(self.model.state_dict(), f"client_{self.client_id}_model.pth")
+
         return {"train_loss": avg_loss, "train_accuracy": accuracy}
 
     def evaluate_model(self) -> tuple[float, float, dict]:

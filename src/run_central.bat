@@ -11,10 +11,16 @@ cd /d "%~dp0\.."
 echo 🌸 FedFlower - Face Classification Central Training
 echo ==================================================
 
-rem Run central training
-echo Starting central training...
-uv run python src/use_cases/%USE_CASE%/central_run.py
+rem Run central training 5 times
+for /L %%i in (1,1,5) do (
+    echo.
+    echo === Training Round %%i of 5 ===
+    echo Starting central training round %%i...
+    uv run python src/use_cases/!USE_CASE!/central_run.py
+    echo Central training round %%i completed.
+    echo.
+)
 
-echo Central training completed.
+echo All 5 training rounds completed.
 
 pause

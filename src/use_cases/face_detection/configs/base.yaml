@@ -20,8 +20,10 @@ model:
 
 # Data Configuration
 data_type: "folder" # "folder" type for Resnet or "npz" for  MLP, Mr.Vu logic
-dataset_url: "https://github.com/AISeedHub/FedFace/releases/download/data/dataset.zip"
+dataset_url: "https://github.com/AISeedHub/FedFace/releases/download/model/dataset.zip"
 full_data_path: "src/use_cases/face_detection/data/dataset"
+train_data_path: "src/use_cases/face_detection/data/dataset/train"
+test_data_path: "src/use_cases/face_detection/data/dataset/test"
 distributed_data_path: "src/use_cases/face_detection/distributed_data" # Path to save distributed data among clients
 num_clients: 2
 non_iid: true

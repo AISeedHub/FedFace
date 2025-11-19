@@ -72,7 +72,7 @@ src/
 2. Start Server
 `./src/run_server.bat` (for Windows)
 3. Start Clients
-`./src/run_clients.bat <client_id>` (for Windows)
+`./src/run_client.bat <client_id>` (for Windows)
 
 ## Config and Usage
 

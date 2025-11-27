@@ -1,5 +1,8 @@
 # Federated Learning for Face Classification using PyTorch and Flower
 
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/873bafde-94f2-4e6a-b964-61b45d4ed2da" />
+
+
 ## Overview 
 ### Chasing `Pluggable Models` + `Config-Driven Design` + `Modular Architecture` concept
 
